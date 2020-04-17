@@ -84,8 +84,8 @@ public class JbossPlugin implements ProfilerPlugin, TransformTemplateAware {
         // Instrumenting class on the base of ejb based application or rest based application.
         if (jbossConfig.isTraceEjb()) {
             addMethodInvocationMessageHandlerEditor();
-            logger.info("[PropCo-APP] Adding PropCo transformers");
-            addPropCoApplicationEditor(jbossConfig.getAppClassesToTransform());
+            logger.info("Adding application specific transformers");
+            addAppSpecificEditor(jbossConfig.getAppClassesToTransform());
         } else {
             // Add async listener. Servlet 3.0
             addRequestEditor();
@@ -97,17 +97,17 @@ public class JbossPlugin implements ProfilerPlugin, TransformTemplateAware {
         }
     }
 
-    private void addPropCoApplicationEditor(final List<String> applicationClassNames) {
+    private void addAppSpecificEditor(final List<String> applicationClassNames) {
     	if (CollectionUtils.isEmpty(applicationClassNames)) {
-    		logger.info("[PropCo-APP] No classes provided to transform");
+    		logger.info("No application specific classes provided to transform");
     		return;
     	}
     	for (final String applicationClassName : applicationClassNames) {
-    		  transformTemplate.transform(applicationClassName, PropCoApplicationHandlerTransform.class);
+    		  transformTemplate.transform(applicationClassName, AppSpecificHandlerTransform.class);
 		}
 	}
     
-    public static class PropCoApplicationHandlerTransform implements TransformCallback {
+    public static class AppSpecificHandlerTransform implements TransformCallback {
 
         @Override
         public byte[] doInTransform(final Instrumentor instrumentor, final ClassLoader classLoader, final String className, final Class<?> classBeingRedefined,
