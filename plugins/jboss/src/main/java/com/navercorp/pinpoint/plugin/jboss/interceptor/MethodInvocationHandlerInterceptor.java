@@ -104,21 +104,13 @@ public class MethodInvocationHandlerInterceptor implements AroundInterceptor {
      * @return the trace
      */
     private Trace createTrace(final Object target, final Object[] args) {
-        final Method methodInvoked = (Method) args[2];
-        final StringBuilder methodNameBuilder = new StringBuilder();
-        if (methodInvoked != null) {
-            try {
-                final Class<?> declaringClass = methodInvoked.getDeclaringClass();
-                if (declaringClass != null) {
-                    methodNameBuilder.append(declaringClass.getCanonicalName());
-                    methodNameBuilder.append('.');
-                }
-                methodNameBuilder.append(methodInvoked.getName());
-            } catch (final Exception exception) {
-                logger.error("An error occurred while fetching method details", exception);
-            }
+    	final StringBuilder methodNameBuilder = getMethodDescriptor(args);
+        
+        Trace trace = traceContext.currentTraceObject();
+        if (trace != null) {
+        	return null;
         }
-        final Trace trace = traceContext.newTraceObject();
+        trace = traceContext.newTraceObject();
         final Connection connection = RemotingContext.getConnection();
         final String remoteAddress = JbossUtility.fetchRemoteAddress(connection);
         if (trace.canSampled()) {
@@ -134,6 +126,32 @@ public class MethodInvocationHandlerInterceptor implements AroundInterceptor {
         }
         return trace;
     }
+
+	private StringBuilder getMethodDescriptor(final Object[] args) {
+		Method methodInvoked = null;
+    	if (args != null && args.length > 0) {
+    		for (final Object object : args) {
+    			if (object instanceof Method) {
+    				methodInvoked = (Method) object;
+    			}
+			}
+    	}
+        final StringBuilder methodNameBuilder = new StringBuilder();
+        if (methodInvoked == null) {
+        	return methodNameBuilder.append(methodDescriptor.getApiDescriptor());
+        }
+            try {
+                final Class<?> declaringClass = methodInvoked.getDeclaringClass();
+                if (declaringClass != null) {
+                    methodNameBuilder.append(declaringClass.getCanonicalName());
+                    methodNameBuilder.append('.');
+                }
+                methodNameBuilder.append(methodInvoked.getName());
+            } catch (final Exception exception) {
+                logger.error("An error occurred while fetching method details", exception);
+            }
+		return methodNameBuilder;
+	}
 
     /**
      * Record root span.

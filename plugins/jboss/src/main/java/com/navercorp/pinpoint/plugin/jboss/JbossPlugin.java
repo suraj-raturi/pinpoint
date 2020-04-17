@@ -16,6 +16,7 @@
 package com.navercorp.pinpoint.plugin.jboss;
 
 import java.security.ProtectionDomain;
+import java.util.List;
 
 import com.navercorp.pinpoint.bootstrap.instrument.InstrumentClass;
 import com.navercorp.pinpoint.bootstrap.instrument.InstrumentException;
@@ -29,6 +30,7 @@ import com.navercorp.pinpoint.bootstrap.logging.PLoggerFactory;
 import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPlugin;
 import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPluginSetupContext;
 import com.navercorp.pinpoint.common.trace.ServiceType;
+import com.navercorp.pinpoint.common.util.CollectionUtils;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.ContextInvocationInterceptor;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.MethodInvocationHandlerInterceptor;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.RequestStartAsyncInterceptor;
@@ -82,6 +84,8 @@ public class JbossPlugin implements ProfilerPlugin, TransformTemplateAware {
         // Instrumenting class on the base of ejb based application or rest based application.
         if (jbossConfig.isTraceEjb()) {
             addMethodInvocationMessageHandlerEditor();
+            logger.info("[PropCo-APP] Adding PropCo transformers");
+            addPropCoApplicationEditor(jbossConfig.getAppClassesToTransform());
         } else {
             // Add async listener. Servlet 3.0
             addRequestEditor();
@@ -93,7 +97,38 @@ public class JbossPlugin implements ProfilerPlugin, TransformTemplateAware {
         }
     }
 
-    private void requestFacade() {
+    private void addPropCoApplicationEditor(final List<String> applicationClassNames) {
+    	if (CollectionUtils.isEmpty(applicationClassNames)) {
+    		logger.info("[PropCo-APP] No classes provided to transform");
+    		return;
+    	}
+    	for (final String applicationClassName : applicationClassNames) {
+    		  transformTemplate.transform(applicationClassName, PropCoApplicationHandlerTransform.class);
+		}
+	}
+    
+    public static class PropCoApplicationHandlerTransform implements TransformCallback {
+
+        @Override
+        public byte[] doInTransform(final Instrumentor instrumentor, final ClassLoader classLoader, final String className, final Class<?> classBeingRedefined,
+        final ProtectionDomain protectionDomain,
+        final byte[] classfileBuffer) throws InstrumentException {
+            final InstrumentClass target = instrumentor.getInstrumentClass(classLoader, className, classfileBuffer);
+            List<InstrumentMethod> declaredMethods = target.getDeclaredMethods();
+            if (!CollectionUtils.isEmpty(declaredMethods)) {
+            	for (InstrumentMethod declaredMethod : declaredMethods) {
+                	if (declaredMethod != null) {
+                		declaredMethod.addInterceptor(MethodInvocationHandlerInterceptor.class);
+                    }
+    			}
+            }
+            return target.toBytecode();
+        }
+    }
+    
+    
+
+	private void requestFacade() {
         transformTemplate.transform("org.apache.catalina.connector.RequestFacade", RequestFacadeTransform.class);
     }
 

@@ -55,6 +55,7 @@ public class JbossConfig {
     private final boolean traceRequestParam;
     private final Filter<String> excludeProfileMethodFilter;
 
+    private final List<String> appClassesToTransform;
     /**
      * Instantiates a new jboss configuration.
      *
@@ -83,6 +84,7 @@ public class JbossConfig {
         } else {
             this.excludeProfileMethodFilter = new SkipFilter<String>();
         }
+        this.appClassesToTransform=config.readList("profiler.app.classesToTransform");
     }
 
     public boolean isEnable() {
@@ -152,4 +154,8 @@ public class JbossConfig {
         sb.append('}');
         return sb.toString();
     }
+
+	public List<String> getAppClassesToTransform() {
+		return appClassesToTransform;
+	}
 }
