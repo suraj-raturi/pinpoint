@@ -31,6 +31,7 @@ import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPlugin;
 import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPluginSetupContext;
 import com.navercorp.pinpoint.common.trace.ServiceType;
 import com.navercorp.pinpoint.common.util.CollectionUtils;
+import com.navercorp.pinpoint.plugin.jboss.interceptor.AppInvocationHandlerInterceptor;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.ContextInvocationInterceptor;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.MethodInvocationHandlerInterceptor;
 import com.navercorp.pinpoint.plugin.jboss.interceptor.RequestStartAsyncInterceptor;
@@ -118,7 +119,7 @@ public class JbossPlugin implements ProfilerPlugin, TransformTemplateAware {
             if (!CollectionUtils.isEmpty(declaredMethods)) {
             	for (InstrumentMethod declaredMethod : declaredMethods) {
                 	if (declaredMethod != null) {
-                		declaredMethod.addInterceptor(MethodInvocationHandlerInterceptor.class);
+                		declaredMethod.addInterceptor(AppInvocationHandlerInterceptor.class);
                     }
     			}
             }
